@@ -5,10 +5,12 @@ using UnityEngine.SceneManagement;
 
 public class EnemyChMove : MonoBehaviour
 {
-    public float maxspeed;
+    public float horizontal;
     public float jumppower;
+    public float maxspeed = 8f;
     public GameObject camera_enemy;
     public GameObject enemy_res;
+    private bool isFacingRight = true;
 
     Rigidbody2D rigid;
     SpriteRenderer spriteRenderer;
@@ -16,6 +18,12 @@ public class EnemyChMove : MonoBehaviour
 
     public float jumpTime;
     private bool isJumping;
+
+    private bool canDash = true;
+    private bool isDashing;
+    private float dashingPower = 24f;
+    private float dashingTime = 0.2f;
+    private float dashingCooldown = 1f;
 
     void Awake()
     {
@@ -26,6 +34,13 @@ public class EnemyChMove : MonoBehaviour
 
     void Update()
     {
+        if (isDashing)
+        {
+            return;
+        }
+
+        horizontal = Input.GetAxisRaw("Horizontal");
+
         if (Input.GetButtonDown("Jump"))
         {
             isJumping = true;
@@ -51,17 +66,6 @@ public class EnemyChMove : MonoBehaviour
             isJumping = false;
         }
 
-
-        if (Input.GetButtonUp("Horizontal"))
-        {
-            rigid.velocity = new Vector2(rigid.velocity.normalized.x * 0.5f, rigid.velocity.y);
-        }
-
-        if (Input.GetButton("Horizontal"))
-        {
-            spriteRenderer.flipX = Input.GetAxisRaw("Horizontal") == -1;
-        }
-
         if (Mathf.Abs(rigid.velocity.x) == 0)
         {
             ani.SetBool("IsWalk", false);
@@ -70,25 +74,49 @@ public class EnemyChMove : MonoBehaviour
         {
             ani.SetBool("IsWalk", true);
         }
+
+        if (Input.GetMouseButtonDown(0) && canDash)
+        {
+            StartCoroutine(Dash());
+        }
+
+        Flip();
     }
 
     // Update is called once per frame
     void FixedUpdate()
     {
-        float h = Input.GetAxisRaw("Horizontal");
-
-        rigid.AddForce(Vector2.right * h, ForceMode2D.Impulse);
-
-        if (rigid.velocity.x > maxspeed)
+        if (isDashing)
         {
-            rigid.velocity = new Vector2(maxspeed, rigid.velocity.y);
+            return;
         }
 
-        else if (rigid.velocity.x < maxspeed * (-1))
-        {
-            rigid.velocity = new Vector2(maxspeed * (-1), rigid.velocity.y);
-        }
+        rigid.velocity = new Vector2(horizontal * maxspeed, rigid.velocity.y);
+    }
 
+    private void Flip()
+    {
+        if (isFacingRight && horizontal < 0f || !isFacingRight && horizontal > 0f)
+        {
+            Vector3 localScale = transform.localScale;
+            isFacingRight = !isFacingRight;
+            localScale.x *= -1f;
+            transform.localScale = localScale;
+        }
+    }
+
+    private IEnumerator Dash()
+    {
+        canDash = false;
+        isDashing = true;
+        float originalGravity = rigid.gravityScale;
+        rigid.gravityScale = 0f;
+        rigid.velocity = new Vector2(transform.localScale.x * dashingPower, 0f);
+        yield return new WaitForSeconds(dashingTime);
+        rigid.gravityScale = originalGravity;
+        isDashing = false;
+        yield return new WaitForSeconds(dashingCooldown);
+        canDash = true;
     }
 
     void OnCollisionEnter2D(Collision2D collision)

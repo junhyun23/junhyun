@@ -60,6 +60,7 @@
     <Compile Include="Assets\Scripts\enemychange.cs" />
     <Compile Include="Assets\Scripts\PlayerMove.cs" />
     <Compile Include="Assets\Simple 2D Platformer BE2\ReadMe\Scripts\ReadmeBE2.cs" />
+    <Compile Include="Assets\Scripts\Dash.cs" />
   </ItemGroup>
   <ItemGroup>
     <Reference Include="UnityEngine">
